@@ -1,0 +1,17 @@
+[package]
+name = "advent-2020"
+version = "0.1.0"
+authors = ["pierreyoda@users.noreply.github.com"]
+edition = "2021"
+
+[lib]
+name = "advent_2024_common"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "day-1"
+path = "src/day-1/main.rs"
+
+[dependencies]
+anyhow = "1.0.93"
+num-traits = "0.2.19"
