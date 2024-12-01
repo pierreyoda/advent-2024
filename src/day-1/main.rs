@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 use anyhow::{anyhow, Context, Ok, Result};
 
@@ -42,8 +42,7 @@ fn input_line_to_pair(line: &str) -> Result<(LocationID, LocationID)> {
     ))
 }
 
-// TODO: use &[&str]
-fn compute_solution_1(input: &[String]) -> Result<u32> {
+fn parse_input(input: &[String]) -> Result<(Vec<LocationID>, Vec<LocationID>)> {
     let (mut ids_left, mut ids_right) = (
         Vec::<LocationID>::with_capacity(input.len()),
         Vec::<LocationID>::with_capacity(input.len()),
@@ -56,10 +55,16 @@ fn compute_solution_1(input: &[String]) -> Result<u32> {
         ids_left.push(left);
         ids_right.push(right);
     }
-    if (ids_left.len() != ids_right.len()) {
+    if ids_left.len() != ids_right.len() {
         return Err(anyhow!("Parsed Location ID lists length mismatch"));
     }
 
+    Ok((ids_left, ids_right))
+}
+
+// TODO: use &[&str]
+fn compute_solution_1(input: &[String]) -> Result<u32> {
+    let (mut ids_left, mut ids_right) = parse_input(input)?;
     ids_left.sort();
     ids_right.sort();
     let mut location_id_pairs = Vec::with_capacity(ids_left.len());
@@ -73,20 +78,38 @@ fn compute_solution_1(input: &[String]) -> Result<u32> {
     Ok(total_distance)
 }
 
+// TODO: use &[&str]
+fn compute_solution_2(input: &[String]) -> Result<u32> {
+    let (ids_left, ids_right) = parse_input(input)?;
+    let mut right_occurrences = HashMap::new();
+    for right_id in &ids_right {
+        if let Some(occurrences) = right_occurrences.get_mut(right_id) {
+            *occurrences += 1;
+        } else {
+            right_occurrences.insert(right_id, 1);
+        }
+    }
+
+    let similarity_score = ids_left.iter().fold(0, |score, left_id| {
+        score + left_id * right_occurrences.get(left_id).unwrap_or(&0)
+    });
+
+    Ok(similarity_score)
+}
+
 fn main() -> Result<()> {
     // Part 1
     run_with_scaffolding_strings("day-1", b'\n', |inputs| Ok(compute_solution_1(&inputs)?))?;
+    // Part 2
+    run_with_scaffolding_strings("day-1", b'\n', |inputs| Ok(compute_solution_2(&inputs)?))?;
 
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::compute_solution_1;
-
-    #[test]
-    fn test_day_1_compute_solution_1() {
-        let input = r#"
+    use crate::{compute_solution_1, compute_solution_2};
+    const TEST_INPUT: &str = r#"
 3 4
 4 3
 2 5
@@ -94,7 +117,24 @@ mod tests {
 3 9
 3 3
 "#;
-        let input_lines: Vec<&str> = input.lines().collect();
-        assert_eq!(compute_solution_1(&input_lines).unwrap(), 11);
+
+    fn test_input_to_lines(input: &str) -> Vec<String> {
+        TEST_INPUT.lines().map(|l| l.to_string()).collect()
+    }
+
+    #[test]
+    fn test_day_1_compute_solution_1() {
+        assert_eq!(
+            compute_solution_1(&test_input_to_lines(TEST_INPUT)).unwrap(),
+            11
+        );
+    }
+
+    #[test]
+    fn test_day_1_compute_solution_2() {
+        assert_eq!(
+            compute_solution_2(&test_input_to_lines(TEST_INPUT)).unwrap(),
+            31
+        );
     }
 }
